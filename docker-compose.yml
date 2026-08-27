@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # 1. Сервис локального инференса Ollama
+  ollama_service:
+    image: ollama/ollama:latest
+    container_name: corporate_ollama_engine
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      # Сохранение скачанных моделей GGUF между перезапусками
+      - ollama_models:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:11434/api/tags || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # 2. Сервис RAG-бота (FastAPI + ChromaDB + SentenceTransformers)
+  rag_bot:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: corporate_rag_bot
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Монтирование персистентной базы ChromaDB и данных для синхронизации
+      - ./chroma_db:/app/chroma_db
+      - ./data:/app/data
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - OLLAMA_HOST=http://ollama_service:11434
+    depends_on:
+      ollama_service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  ollama_models:

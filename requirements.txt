@@ -1,0 +1,20 @@
+# Векторная база данных
+chromadb>=0.5.0
+
+# Модель эмбеддингов
+sentence-transformers>=3.0.0
+
+# Разделение текста на чанки
+langchain-text-splitters>=0.2.0
+
+# Интеграция с локальным сервисом Ollama
+ollama>=0.3.0
+
+# REST API бэкенд и веб-сервер
+fastapi>=0.110.0
+uvicorn>=0.28.0
+pydantic>=2.0.0
+
+# Дополнительные утилиты
+python-dotenv>=1.0.0
+requests>=2.31.0

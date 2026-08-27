@@ -1,0 +1,40 @@
+# Виртуальные окружения Python (Windows и macOS)
+.venv/
+venv/
+ENV/
+env/
+
+# Кэш байт-кода Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Векторное локальное хранилище ChromaDB (индекс пересоздается скриптом)
+chroma_db/
+
+# Переменные окружения и секреты
+.env
+.env.local
+*.key
+*.pem
+
+# Системные файлы macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Системные файлы Windows
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Настройки IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

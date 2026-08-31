@@ -38,3 +38,10 @@ $RECYCLE.BIN/
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+# Логи
+logs/eval/*.jsonl
+logs/system/*.log
+
+# Файлы
+.docs/НоваяПапка/

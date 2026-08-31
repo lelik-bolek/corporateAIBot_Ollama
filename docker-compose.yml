@@ -18,7 +18,7 @@ services:
       retries: 5
       start_period: 10s
 
-  # 2. Сервис RAG-бота (FastAPI + ChromaDB + SentenceTransformers)
+  # 2. Сервис RAG-бота (FastAPI + ChromaDB + SentenceTransformers + Security v3)
   rag_bot:
     build:
       context: .
@@ -28,13 +28,16 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Монтирование персистентной базы ChromaDB и данных для синхронизации
+      # Монтирование персистентной базы ChromaDB и корпуса знаний
       - ./chroma_db:/app/chroma_db
       - ./data:/app/data
+      # Монтирование каталога логов (системный аудит и eval-метрики)
+      - ./logs:/app/logs
     environment:
       - API_HOST=0.0.0.0
       - API_PORT=8000
       - OLLAMA_HOST=http://ollama_service:11434
+      - DEFAULT_APP_VERSION=v3
     depends_on:
       ollama_service:
         condition: service_healthy

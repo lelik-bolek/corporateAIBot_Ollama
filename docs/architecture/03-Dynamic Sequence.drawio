@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0">
+  <diagram id="mwNukutiTMAwBbxpmax_" name="03-Dynamic Sequence">
+    <mxGraphModel dx="1823" dy="885" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <object placeholders="1" c4Name="Client / User" c4Type="Person" label="&lt;b&gt;%c4Name%&lt;/b&gt;&lt;br&gt;[%c4Type%]" id="f_FT41u6peVvbezBbTVe-1">
+          <mxCell parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#083F75;strokeColor=#06315C;fontColor=#ffffff;size=40;" vertex="1">
+            <mxGeometry height="1040" width="120" x="60" y="40" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="FastAPI Controller" c4Type="src/bot.py" label="&lt;b&gt;%c4Name%&lt;/b&gt;&lt;br&gt;[%c4Type%]" id="f_FT41u6peVvbezBbTVe-2">
+          <mxCell parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#1061B0;strokeColor=#0D5091;fontColor=#ffffff;size=40;" vertex="1">
+            <mxGeometry height="1040" width="140" x="230" y="40" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="RAG Pipeline" c4Type="src/rag_pipeline.py" label="&lt;b&gt;%c4Name%&lt;/b&gt;&lt;br&gt;[%c4Type%]" id="f_FT41u6peVvbezBbTVe-3">
+          <mxCell parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#1061B0;strokeColor=#0D5091;fontColor=#ffffff;size=40;" vertex="1">
+            <mxGeometry height="1040" width="140" x="420" y="40" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="Security Perimeter" c4Type="src/security/*" label="&lt;b&gt;%c4Name%&lt;/b&gt;&lt;br&gt;[3 Рубежа Защиты]" id="f_FT41u6peVvbezBbTVe-4">
+          <mxCell parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#C0392B;strokeColor=#962D22;fontColor=#ffffff;size=40;" vertex="1">
+            <mxGeometry height="1040" width="150" x="610" y="40" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="Retrieval Service" c4Type="SentenceTransformers+ChromaDB" label="&lt;b&gt;%c4Name%&lt;/b&gt;&lt;br&gt;[Embedder + Vector DB]" id="f_FT41u6peVvbezBbTVe-5">
+          <mxCell parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#23A2D9;strokeColor=#0E7DAD;fontColor=#ffffff;size=40;" vertex="1">
+            <mxGeometry height="1040" width="160" x="810" y="40" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="Ollama Engine" c4Type="qwen2.5:1.5b-instruct" label="&lt;b&gt;%c4Name%&lt;/b&gt;&lt;br&gt;[LLM Daemon :11434]" id="f_FT41u6peVvbezBbTVe-6">
+          <mxCell parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#1061B0;strokeColor=#0D5091;fontColor=#ffffff;size=40;" vertex="1">
+            <mxGeometry height="1040" width="150" x="1020" y="40" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="BackgroundTasks" c4Type="logs/eval_runs_v3.jsonl" label="&lt;b&gt;%c4Name%&lt;/b&gt;&lt;br&gt;[EvalLogger]" id="f_FT41u6peVvbezBbTVe-7">
+          <mxCell parent="1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#28A745;strokeColor=#1E7E34;fontColor=#ffffff;size=40;" vertex="1">
+            <mxGeometry height="1040" width="140" x="1220" y="40" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="f_FT41u6peVvbezBbTVe-8" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#1061B0;strokeWidth=1.5;fontSize=11;" value="1. HTTP POST /ask {query, mode}">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="120" y="110" as="sourcePoint" />
+            <mxPoint x="300" y="110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-9" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=none;dashed=1;strokeColor=#666666;fontSize=10;" value="TraceRequestsMiddleware: генерация X-Trace-ID">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="340" y="135" />
+              <mxPoint x="340" y="150" />
+            </Array>
+            <mxPoint x="300" y="135" as="sourcePoint" />
+            <mxPoint x="300" y="150" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-10" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#1061B0;strokeWidth=1.5;fontSize=11;" value="2. answer_question(query, mode)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="170" as="sourcePoint" />
+            <mxPoint x="490" y="170" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-11" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#C0392B;strokeWidth=1.5;fontSize=11;" value="3. [Рубеж 1] check_input_injection(query)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="490" y="200" as="sourcePoint" />
+            <mxPoint x="685" y="200" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-12" parent="1" style="shape=umlFrame;whiteSpace=wrap;html=1;width=180;height=20;fillColor=none;strokeColor=#C0392B;strokeWidth=1.5;fontSize=10;fontColor=#C0392B;" value="alt [Прямая инъекция обнаружена]" vertex="1">
+          <mxGeometry height="75" width="630" x="80" y="225" as="geometry" />
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-13" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeColor=#C0392B;strokeWidth=1.5;fontSize=10;" value="Заблокировано (security_triggered=True, latency &lt; 1мс, llm=0)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="685" y="255" as="sourcePoint" />
+            <mxPoint x="490" y="255" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-14" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeColor=#C0392B;strokeWidth=1.5;fontSize=10;" value="HTTP 200 {answer: &#39;Запрос заблокирован&#39;, is_known: false}">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="490" y="280" as="sourcePoint" />
+            <mxPoint x="120" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-15" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeColor=#28A745;fontSize=10;" value="Запрос чист (True, clean_query)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="685" y="325" as="sourcePoint" />
+            <mxPoint x="490" y="325" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-16" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#23A2D9;strokeWidth=1.5;fontSize=11;" value="4. retrieve(query, top_k=4)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="490" y="355" as="sourcePoint" />
+            <mxPoint x="890" y="355" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-17" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=none;dashed=1;strokeColor=#23A2D9;fontSize=10;" value="encode(&#39;query: ...&#39;) + cosine similarity">
+          <mxGeometry relative="1" x="0.1579" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="930" y="375" />
+              <mxPoint x="930" y="390" />
+            </Array>
+            <mxPoint x="890" y="375" as="sourcePoint" />
+            <mxPoint x="890" y="390" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-18" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeColor=#23A2D9;fontSize=10;" value="Top-4 чанка (с метаданными и скорами)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="890" y="415" as="sourcePoint" />
+            <mxPoint x="490" y="415" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-19" parent="1" style="shape=umlFrame;whiteSpace=wrap;html=1;width=240;height=20;fillColor=none;strokeColor=#D68910;strokeWidth=1.5;fontSize=10;fontColor=#D68910;" value="alt [Top-1 Score &lt; 0.80 (SIMILARITY_THRESHOLD)]" vertex="1">
+          <mxGeometry height="60" width="450" x="80" y="435" as="geometry" />
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-20" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeColor=#D68910;strokeWidth=1.5;fontSize=10;" value="HTTP 200 {answer: &#39;Я не знаю...&#39;, is_known: false, llm_ms: 0}">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="490" y="470" as="sourcePoint" />
+            <mxPoint x="120" y="470" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-21" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#C0392B;strokeWidth=1.5;fontSize=11;" value="&lt;div&gt;5. [Рубеж 2]&amp;nbsp;sanitize_context_chunks(): фильтрация по сигнатурам атак&amp;nbsp;&lt;/div&gt;&lt;div&gt;(ignore instructions, root:, токены) и изоляция тегами &amp;lt;КОНТЕКСТ&amp;gt;&lt;/div&gt;">
+          <mxGeometry relative="1" x="0.4359" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="490" y="520" as="sourcePoint" />
+            <mxPoint x="685" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-22" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=none;dashed=1;strokeColor=#C0392B;fontSize=10;" value="Исключение poisoned_root.txt + маркеры">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="725" y="535" />
+              <mxPoint x="725" y="550" />
+            </Array>
+            <mxPoint x="685" y="535" as="sourcePoint" />
+            <mxPoint x="685" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-23" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeColor=#28A745;fontSize=10;" value="Чистые чанки (safe_chunks)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="685" y="570" as="sourcePoint" />
+            <mxPoint x="490" y="570" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-24" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=none;strokeColor=#0E7DAD;strokeWidth=1.5;fontSize=10;" value="6. format_rag_messages(): склейка SYSTEM_PROMPT + FEW_SHOT + &lt;КОНТЕКСТ&gt; + Query">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="540" y="605" />
+              <mxPoint x="540" y="625" />
+            </Array>
+            <mxPoint x="490" y="605" as="sourcePoint" />
+            <mxPoint x="490" y="625" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-25" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#1061B0;strokeWidth=1.5;fontSize=11;" value="7. HTTP POST /api/chat {messages, temp=0.1, repeat_penalty=1.15}">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="490" y="660" as="sourcePoint" />
+            <mxPoint x="1095" y="660" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-26" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeColor=#1061B0;fontSize=10;" value="Сырой ответ модели (CoT + Answer)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1095" y="700" as="sourcePoint" />
+            <mxPoint x="490" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-27" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#C0392B;strokeWidth=1.5;fontSize=11;" value="8. [Рубеж 3] process_output(answer, cot, safe_chunks)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="490" y="740" as="sourcePoint" />
+            <mxPoint x="685" y="740" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-28" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=none;dashed=1;strokeColor=#C0392B;fontSize=10;" value="Dual-Sanitizer (маскирование swordfish) + Overlap &gt;= 30% check">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="725" y="760" />
+              <mxPoint x="725" y="775" />
+            </Array>
+            <mxPoint x="685" y="760" as="sourcePoint" />
+            <mxPoint x="685" y="775" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-29" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeColor=#28A745;fontSize=10;" value="Безопасный ответ (clean_answer, clean_cot, is_known)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="685" y="805" as="sourcePoint" />
+            <mxPoint x="490" y="805" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-30" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeColor=#1061B0;fontSize=10;" value="9. Сформированный словарь JSON с таймингами (retrieval_ms, llm_ms)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="490" y="845" as="sourcePoint" />
+            <mxPoint x="300" y="845" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-31" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#28A745;strokeWidth=1.5;fontSize=11;" value="10. BackgroundTasks.add_task(log_interaction, raw_payload)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="885" as="sourcePoint" />
+            <mxPoint x="1290" y="885" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-32" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=none;dashed=1;strokeColor=#28A745;fontSize=10;" value="Асинхронный append в logs/eval/eval_runs_v3.jsonl">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1330" y="905" />
+              <mxPoint x="1330" y="920" />
+            </Array>
+            <mxPoint x="1290" y="905" as="sourcePoint" />
+            <mxPoint x="1290" y="920" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f_FT41u6peVvbezBbTVe-33" edge="1" parent="1" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeColor=#1061B0;strokeWidth=1.5;fontSize=11;" value="11. HTTP 200 OK (QueryResponse: answer, CoT, sources, latency)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="960" as="sourcePoint" />
+            <mxPoint x="120" y="960" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ErEDibdg6omsu2uSJs2s-1" parent="1" style="text;whiteSpace=wrap;html=1;fontStyle=1" value="C4 Dynamic / Sequence Diagram" vertex="1">
+          <mxGeometry height="40" width="210" x="1430" y="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

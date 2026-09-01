@@ -44,4 +44,4 @@ logs/eval/*.jsonl
 logs/system/*.log
 
 # Файлы
-.docs/НоваяПапка/
+**/НоваяПапка/

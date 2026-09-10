@@ -6,12 +6,16 @@
 
 import sys
 import time
+import pickle
 from pathlib import Path
 from typing import List, Dict, Any
 
 import chromadb
 from sentence_transformers import SentenceTransformer
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from rank_bm25 import BM25Okapi
+import nltk
+from nltk.stem.snowball import SnowballStemmer
 
 # Гарантия корректной кодировки UTF-8 в консоли Windows
 if sys.platform == "win32":
@@ -25,7 +29,8 @@ from src.config import (
     EMBEDDING_MODEL_NAME,
     PASSAGE_PREFIX,
     CHUNK_SIZE,
-    CHUNK_OVERLAP
+    CHUNK_OVERLAP,
+    BM25_INDEX_PATH,
 )
 
 
@@ -72,6 +77,30 @@ def load_and_chunk_documents(kb_dir: Path) -> List[Dict[str, Any]]:
             chunk_global_id += 1
 
     return chunks_data
+
+
+# ==============================================================================
+# ТОКЕНИЗАЦИЯ ДЛЯ BM25 (SPARSE RETRIEVAL) — добавлено Step 3
+# ==============================================================================
+_TOKEN_PATTERN = r"[a-zA-Z0-9_\-\.\$]+|[а-яА-ЯёЁ]+"
+_RU_STEMMER = SnowballStemmer("russian")
+
+
+def tokenize_for_bm25(text: str) -> list[str]:
+    """
+    Выделяет токены для разрежённого индекса BM25.
+    - Кириллические токены -> SnowballStemmer("russian")
+    - Латиница, спецсимволы, цифры -> .lower() без искажения основы
+    """
+    import re
+    raw_tokens = re.findall(_TOKEN_PATTERN, text)
+    result = []
+    for tok in raw_tokens:
+        if re.search(r"[а-яА-ЯёЁ]", tok):
+            result.append(_RU_STEMMER.stem(tok.lower()))
+        else:
+            result.append(tok.lower())
+    return result
 
 
 def build_and_save_index():
@@ -142,6 +171,36 @@ def build_and_save_index():
     print(f"[+] Всего записей в ChromaDB: {collection.count()} - build_index.py:142")
     print(f"[+] Путь к хранилищу: {CHROMA_DIR} - build_index.py:143")
     print("= - build_index.py:144" * 70)
+
+    # ==========================================================================
+    # 5. ПОСТРОЕНИЕ РАЗРЕЖЁННОГО ИНДЕКСА BM25 — добавлено Step 3
+    # ==========================================================================
+    print(f"\n[*] Построение разрежённого индекса BM25... - build_index.py:bm25")
+    bm25_start = time.perf_counter()
+
+    tokenized_corpus = [tokenize_for_bm25(item["text"]) for item in chunks]
+    bm25_instance = BM25Okapi(tokenized_corpus)
+
+    bm25_payload = {
+        "bm25": bm25_instance,
+        "chunks": [
+            {
+                "chunk_id": str(i),
+                "text": doc["text"],
+                "source_file": doc["metadata"]["source_file"]
+            }
+            for i, doc in enumerate(chunks)
+        ]
+    }
+
+    BM25_INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(BM25_INDEX_PATH, "wb") as f:
+        pickle.dump(bm25_payload, f)
+
+    bm25_elapsed = time.perf_counter() - bm25_start
+    print(f"[+] BM25 индекс сохранён: {BM25_INDEX_PATH} - build_index.py:bm25")
+    print(f"[+] Размер корпуса BM25: {len(tokenized_corpus)} документов")
+    print(f"[+] Построение BM25 заняло: {bm25_elapsed:.2f} сек.")
 
 
 if __name__ == "__main__":

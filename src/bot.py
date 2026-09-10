@@ -183,7 +183,9 @@ def ask_question(request: QueryRequest, background_tasks: BackgroundTasks):
             "sources": result["sources"],
             "confidence_score": result["confidence_score"],
             "is_known": result["is_known"],
-            "metrics": result["metrics"]
+            "metrics": result["metrics"],
+            "bm25_top_score": result.get("bm25_top_score", 0.0),
+            "bm25_matches_count": result.get("bm25_matches_count", 0),
         }
 
         # Асинхронное логирование метрик RAG

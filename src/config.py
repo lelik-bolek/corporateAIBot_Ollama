@@ -48,6 +48,13 @@ TOP_K_CHUNKS = 4
 # Минимальный порог косинусного сходства для отсечения оффтопа
 SIMILARITY_THRESHOLD = 0.80
 
+# Параметры гибридного поиска (Dense + Sparse + RRF) — добавлено Step 2
+BM25_INDEX_PATH = CHROMA_DIR / "bm25_index.pkl"
+TOP_K_DENSE = 5
+TOP_K_SPARSE = 5
+FINAL_TOP_K = 3
+RRF_K = 60
+
 # ==============================================================================
 # 4. НАСТРОЙКИ СЕТИ И ДВИЖКА (ВЫБОР РЕЖИМА ЗАПУСКА)
 # ==============================================================================
@@ -101,6 +108,7 @@ INJECTION_PATTERNS = [
 
 # Паттерны поиска канареечных маркеров и конфиденциальных данных (Leaks)
 LEAK_PATTERNS = [
+    # Существующие канарейки v3
     r"swordfish",
     r"суперпароль",
     r"root_token",
@@ -108,6 +116,14 @@ LEAK_PATTERNS = [
     r"qf_masterpass",
     r"hvs\.[a-za-z0-9_\-]+",
     r"synthflux_securekey",
+    # Новые канарейки NiFi (Step 2)
+    r"nifi_admin_api_token",
+    r"jdbc:[a-z]+://[a-z0-9._\-]+:\d+/[a-z0-9_]+",
+    r"ldap_service_account_password",
+    r"keystore_password_nifi_prod_\d{4}",
+    r"NiFiProdAdmin\d{4}!",
+    r"ServiceP@ssw\w+rd#\d+",
+    r"ReadOnlyAccess\d{4}",
 ]
 
 COMPILED_INJECTIONS = [re.compile(p, re.IGNORECASE) for p in INJECTION_PATTERNS]

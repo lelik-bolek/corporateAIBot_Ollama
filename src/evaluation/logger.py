@@ -15,7 +15,11 @@ from src.config import (
     TOP_K_CHUNKS,
     SIMILARITY_THRESHOLD,
     EMBEDDING_MODEL_NAME,
-    LLM_MODEL
+    LLM_MODEL,
+    TOP_K_DENSE,
+    TOP_K_SPARSE,
+    FINAL_TOP_K,
+    RRF_K,
 )
 
 
@@ -40,7 +44,11 @@ class EvalLogger:
                 "embedding_model": EMBEDDING_MODEL_NAME,
                 "top_k": TOP_K_CHUNKS,
                 "similarity_threshold": SIMILARITY_THRESHOLD,
-                "llm_model": LLM_MODEL
+                "llm_model": LLM_MODEL,
+                "top_k_dense": TOP_K_DENSE,
+                "top_k_sparse": TOP_K_SPARSE,
+                "final_top_k": FINAL_TOP_K,
+                "rrf_k": RRF_K,
             }
 
         try:

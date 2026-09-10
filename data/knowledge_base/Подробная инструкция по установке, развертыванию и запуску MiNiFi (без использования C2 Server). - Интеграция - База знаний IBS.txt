@@ -1,0 +1,21 @@
+Подробная инструкция по установке, развертыванию и запуску MiNiFi (без использования C2 Server). Оглавление: 1 Установка Apache MiNiFi на Ubuntu. 2 Установка Converter ToolKit. 3 Подготовка шаблона для загрузки в экземпляр Apache MiNiFi.
+
+4 Apache MiNiFi готов к работе! Шаблон файла config.yml config.yml Ссылка на документацию. 1 Установка Apache MiNiFi на Ubuntu. В корневой директории создадим папку: `mkdir minifi/`. Выполним команду загрузки архива `wget https://dlcdn.apache.org/nifi/1.23.2/minifi-1.23.2-bin.zip` (ссылка актуальная на август 2023г.).
+
+Разархивируем загруженный архив: unzip minifi-1.23.2-bin.zip. Для полноценной работы Apache MiNiFi должен быть установлен пакет java-8-openjdk-amd64. В файл `minifi-env.sh` внести изменения: export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/.
+
+После выполнения вышеуказанных действий Apache MiNiFi готов к работе, но сейчас в нем нет загруженного шаблона для выполнения каких либо операций. Для загрузки шаблона в Apache MiNiFi используется программа Converter ToolKit. Ссылка на Converter ToolKit.
+
+Шаблоны для работы экземпляров Apache MiNiFi удобно создавать в веб интерфейсе Apache NiFi, далее трансформировать их и загружать в MiNiFi. 2 Установка Converter ToolKit. В корневой директории создадим парку converter_toolkit: mkdir converter_toolkit/.
+
+Загрузим Converter ToolKit в папку converter_toolkit: wget https://dlcdn.apache.org/nifi/1.23.2/minifi-toolkit-1.23.2-bin.zip (ссылка актуальная на август 2023г.). Разархивируем загруженный архив: unzip minifi-toolkit-1.23.2-bin.zip.
+
+Важно, для работы Converter ToolKit должна быть установлена JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64, в системе. 3 Подготовка шаблона для загрузки в экземпляр Apache MiNiFi. 1. В Apache NiFi cоздаем шаблон потока трансформации который в дальнейшем должен работать в экземпляре Apache MiNiFi, ссылка на описание потока MiNiFi.
+
+2. Сохраняем шаблон MiNiFi, есть 2 способа: a. Сохранение созданного шаблона на ПК, ссылка. b. редактирование файла flow.xml.gz который находится в директории $NIFI_HOME/conf/flow.xml.gz. Поиск шаблона по тегу <template encoding-version="...">.
+
+3. Добавляем полученный шаблон MiNiFi.xml в предварительно созданную папку для трансформации, в той же директории где у нас установлен Converter ToolKit. 4. Выполняем команду трансформации файла MiNiFi.xml → config.yml, формат команды: config.sh transform input_file output_file. Обращаю внимание, что в итоге мы должны переименовать файл на config.yml. Пример команды, которая выполняется из корневой директории, Converter ToolKit находится в папке converter_toolkit, файл для трансформации находится в папке transform: converter_toolkit/minifi-toolkit-1.23.2/bin/config.sh transform /home/user/transformation/MiNiFi_Flow.xml /home/user/transformation/config.yml 5. далее, открыть полученный файл config.yml и добавьте "рабочий адрес хоста": "http://nifi-work-address:8080/nifi/" в раздел «Remote Process Groups»: Remote Process Groups: - id: 12d26fa6-ae6a-3324-0000-000000000000 name: '' url: http://nifi-work-address:8080/nifi/ comment: '' timeout: 30 sec yield period: 10 sec transport protocol: HTTP proxy host: '' proxy port: '' proxy user: '' proxy password: '' local network interface: '' Input Ports: - id: 4fa53c85-018a-1000-11e7-870afe821444 name: fron MINIFI comment: '' max concurrent tasks: 1 use compression: false Output Ports: [] Input Ports: [] Output Ports: [] Funnels: [] Connections: [] Remote Process Groups: [] NiFi Properties Overrides: {} Подразумевается, что мы создаем поток для MiNiFi на другом хосте, ином, чем тот, что будет использоваться в работе, для этого и нужна замена хоста на "рабочий адрес хоста".
+
+6. Копируем файл в папку экземпляра minifi-1.23.2/conf: cp /home/user/transformation/config.yml /home/user/minifi/minifi-1.23.2/conf/ 4 Apache MiNiFi готов к работе! Команды: `sudo./minifi.sh start` `sudo./minifi.sh status` `sudo./minifi.sh stop` Примечание: До запуска Apache MiNiFi должны быть внесены изменения настройки в Apache NiFi.
+
+Шаблон файла config.yml config.yml Нет меток

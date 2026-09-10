@@ -8,6 +8,8 @@
 """
 
 import time
+import pickle
+import re
 from typing import Dict, Any, List, Tuple
 from pathlib import Path
 
@@ -29,10 +31,16 @@ from src.config import (
     REPEAT_PENALTY,
     SECURITY_BLOCKED_ANSWER,
     SECURITY_BLOCKED_COT,
+    BM25_INDEX_PATH,
+    TOP_K_DENSE,
+    TOP_K_SPARSE,
+    FINAL_TOP_K,
+    RRF_K,
 )
 from src.prompts.templates import format_rag_messages
 from src.security.guardrails import SecurityManager
 from src.utils.logger import sys_logger
+from src.build_index import tokenize_for_bm25
 
 
 class RAGPipeline:
@@ -50,42 +58,141 @@ class RAGPipeline:
         sys_logger.info(f"Загрузка модели эмбеддингов: {EMBEDDING_MODEL_NAME}...")
         self.embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
 
+        # Загрузка разрежённого индекса BM25 — добавлено Step 4
+        if not BM25_INDEX_PATH.exists():
+            sys_logger.error(f"BM25 индекс не найден: {BM25_INDEX_PATH}")
+            raise FileNotFoundError(f"BM25 индекс не найден: {BM25_INDEX_PATH}")
+        sys_logger.info(f"Загрузка BM25 индекса: {BM25_INDEX_PATH}...")
+        with open(BM25_INDEX_PATH, "rb") as f:
+            bm25_data = pickle.load(f)
+        self.bm25 = bm25_data["bm25"]
+        self.bm25_chunks = bm25_data["chunks"]
+        sys_logger.info(f"BM25 индекс загружен: {len(self.bm25_chunks)} чанков.")
+
         sys_logger.info(f"Подключение к Ollama API: {OLLAMA_HOST} | Модель: {LLM_MODEL}")
         self.ollama_client = ollama.Client(host=OLLAMA_HOST)
         sys_logger.info("RAG-пайплайн успешно инициализирован.")
 
     def retrieve(self, query: str, top_k: int = TOP_K_CHUNKS) -> List[Dict[str, Any]]:
-        """Извлечение Top-K наиболее релевантных чанков из ChromaDB."""
+        """
+        Гибридный поиск (Dense + Sparse + RRF) — обновлено Step 4.
+        Dense: ChromaDB (multilingual-e5-base)
+        Sparse: BM25 (Okapi) с токенизацией tokenize_for_bm25
+        Слияние: Reciprocal Rank Fusion (k=60)
+        Возвращает FINAL_TOP_K чанков с наивысшим RRF_Score.
+        """
         prepared_query = f"{QUERY_PREFIX}{query.strip()}"
+
+        # ------------------------------------------------------------------
+        # 1. DENSE RETRIEVAL (ChromaDB)
+        # ------------------------------------------------------------------
         query_vector = self.embed_model.encode(
             [prepared_query],
             convert_to_numpy=True,
             normalize_embeddings=True
         ).tolist()[0]
 
-        results = self.collection.query(
+        dense_results = self.collection.query(
             query_embeddings=[query_vector],
-            n_results=top_k,
+            n_results=TOP_K_DENSE,
             include=["documents", "metadatas", "distances"]
         )
 
-        retrieved_chunks = []
-        if results and results.get("documents") and results["documents"][0]:
-            docs = results["documents"][0]
-            metas = results["metadatas"][0]
-            distances = results["distances"][0]
+        dense_chunks: Dict[int, Dict[str, Any]] = {}  # chunk_id -> данные
+        dense_ranks: Dict[int, int] = {}               # chunk_id -> rank (1-based)
 
-            for doc, meta, dist in zip(docs, metas, distances):
-                # Косинусное сходство: Cosine Similarity = 1 - Cosine Distance
+        if dense_results and dense_results.get("documents") and dense_results["documents"][0]:
+            docs = dense_results["documents"][0]
+            metas = dense_results["metadatas"][0]
+            distances = dense_results["distances"][0]
+            ids = dense_results["ids"][0]
+
+            for rank, (doc_id, doc, meta, dist) in enumerate(zip(ids, docs, metas, distances), start=1):
                 sim_score = max(0.0, min(1.0, 1.0 - float(dist)))
-                retrieved_chunks.append({
+                # Извлекаем глобальный индекс из формата "chunk_N"
+                chunk_id = int(doc_id.split("_")[-1])
+                source = meta.get("source_file", "unknown")
+                dense_chunks[chunk_id] = {
                     "text": doc,
-                    "source_file": meta.get("source_file", "unknown"),
-                    "chunk_id": meta.get("chunk_id", -1),
-                    "similarity_score": round(sim_score, 4)
-                })
+                    "source_file": source,
+                    "chunk_id": chunk_id,
+                    "dense_score": round(sim_score, 4),
+                    "bm25_score": 0.0,
+                    "rrf_score": 0.0,
+                    "from_bm25": False,
+                }
+                dense_ranks[chunk_id] = rank
 
-        return retrieved_chunks
+        # ------------------------------------------------------------------
+        # 2. SPARSE RETRIEVAL (BM25)
+        # ------------------------------------------------------------------
+        query_tokens = tokenize_for_bm25(query)
+        bm25_scores = self.bm25.get_scores(query_tokens)
+        bm25_top_score = round(float(max(bm25_scores)), 4) if len(bm25_scores) > 0 else 0.0
+
+        # Индексация чанков BM25 по убыванию скора
+        ranked_bm25 = sorted(
+            enumerate(bm25_scores),
+            key=lambda x: x[1],
+            reverse=True
+        )[:TOP_K_SPARSE]
+
+        sparse_chunks: Dict[int, Dict[str, Any]] = {}
+        sparse_ranks: Dict[int, int] = {}
+
+        for rank, (idx, score) in enumerate(ranked_bm25, start=1):
+            chunk_data = self.bm25_chunks[idx]
+            chunk_id = int(chunk_data["chunk_id"])
+            sparse_chunks[chunk_id] = {
+                "text": chunk_data["text"],
+                "source_file": chunk_data["source_file"],
+                "chunk_id": chunk_id,
+                "dense_score": 0.0,
+                "bm25_score": round(float(score), 4),
+                "rrf_score": 0.0,
+                "from_bm25": True,
+            }
+            sparse_ranks[chunk_id] = rank
+
+        # ------------------------------------------------------------------
+        # 3. RECIPROCAL RANK FUSION (RRF)
+        # ------------------------------------------------------------------
+        all_chunk_ids = set(dense_ranks.keys()) | set(sparse_ranks.keys())
+        merged: Dict[int, Dict[str, Any]] = {}
+
+        for cid in all_chunk_ids:
+            # Берём данные из dense или sparse (dense приоритетнее)
+            if cid in dense_chunks:
+                entry = dict(dense_chunks[cid])
+            else:
+                entry = dict(sparse_chunks[cid])
+
+            # Чанк считается из BM25, если он присутствовал в sparse-результатах
+            entry["from_bm25"] = entry.get("from_bm25", False) or (cid in sparse_ranks)
+
+            rrf = 0.0
+            if cid in dense_ranks:
+                rrf += 1.0 / (RRF_K + dense_ranks[cid])
+            if cid in sparse_ranks:
+                rrf += 1.0 / (RRF_K + sparse_ranks[cid])
+
+            entry["rrf_score"] = round(rrf, 6)
+            # Обратная совместимость: similarity_score = dense_score
+            entry["similarity_score"] = entry["dense_score"]
+            merged[cid] = entry
+
+        # Сортировка по убыванию RRF, отбор FINAL_TOP_K
+        final_chunks = sorted(
+            merged.values(),
+            key=lambda x: x["rrf_score"],
+            reverse=True
+        )[:FINAL_TOP_K]
+
+        # Сохраняем метрики BM25 для observability — Step 5
+        self._last_bm25_top_score = bm25_top_score
+        self._last_bm25_matches_count = sum(1 for c in final_chunks if c.get("from_bm25"))
+
+        return final_chunks
 
     def _parse_generation(self, raw_text: str) -> Tuple[str, str]:
         """Разделяет вывод модели на chain_of_thought и финальный ответ."""
@@ -130,17 +237,19 @@ class RAGPipeline:
                     "retrieval_latency_ms": 0.0,
                     "llm_latency_ms": 0.0
                 },
+                "bm25_top_score": 0.0,
+                "bm25_matches_count": 0,
                 "retrieved_chunks": []
             }
 
         # ----------------------------------------------------------------------
-        # ЭТАП 2. Retrieval (Поиск в ChromaDB)
+        # ЭТАП 2. Hybrid Retrieval (Dense ChromaDB + Sparse BM25 + RRF)
         # ----------------------------------------------------------------------
         t_ret_start = time.perf_counter()
         raw_chunks = self.retrieve(query, top_k=TOP_K_CHUNKS)
         retrieval_latency_ms = round((time.perf_counter() - t_ret_start) * 1000, 2)
         top_score = raw_chunks[0]["similarity_score"] if raw_chunks else 0.0
-        sys_logger.info(f"ChromaDB поиск завершен ({retrieval_latency_ms} мс). Чанков: {len(raw_chunks)} | Top-1 скор: {top_score}")
+        sys_logger.info(f"Гибридный поиск завершен ({retrieval_latency_ms} мс). Чанков: {len(raw_chunks)} | Top-1 скор: {top_score}")
 
         # ----------------------------------------------------------------------
         # РУБЕЖ 2. Chunk Sanitization (Очистка отравленных чанков)
@@ -157,7 +266,7 @@ class RAGPipeline:
                 "question": query,
                 "answer": "Я не знаю. В корпоративной базе знаний нет информации по данному вопросу.",
                 "chain_of_thought": (
-                    f"1. Выполнен поиск по базе знаний ChromaDB.\n"
+                    f"1. Выполнен гибридный поиск (Dense + BM25) по базе знаний.\n"
                     f"2. Максимальный скор сходства составил {top_score:.4f}, что ниже порога {SIMILARITY_THRESHOLD}.\n"
                     f"3. Факты для формирования ответа отсутствуют."
                 ),
@@ -227,5 +336,7 @@ class RAGPipeline:
                 "retrieval_latency_ms": retrieval_latency_ms,
                 "llm_latency_ms": llm_latency_ms
             },
+            "bm25_top_score": getattr(self, "_last_bm25_top_score", 0.0),
+            "bm25_matches_count": getattr(self, "_last_bm25_matches_count", 0),
             "retrieved_chunks": raw_chunks
         }

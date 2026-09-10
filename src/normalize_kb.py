@@ -27,6 +27,43 @@ KB_DIR = BASE_DIR / "data" / "knowledge_base"
 
 
 # ==============================================================================
+# 2.5. ОЧИСТКА CONFLUENCE PDF АРТЕФАКТОВ (ДОБАВЛЕНО ДЛЯ STEP 1)
+# ==============================================================================
+def clean_confluence_artifacts(text: str) -> str:
+    """Удаляет Confluence-специфичный мусор: мета-информацию, URL, колонтитулы, номера страниц."""
+    lines = text.split("\n")
+    cleaned_lines = []
+    for line in lines:
+        stripped = line.strip()
+        # Пропускаем служебные строки Confluence
+        if re.match(r"^Создана пользователем\s", stripped, re.IGNORECASE):
+            continue
+        if re.match(r"^Страницы\s*/\s*…\s*/", stripped):
+            continue
+        if re.match(r"^\d{2}\.\d{2}\.\d{4},\s*\d{2}:\d{2}\s", stripped):
+            continue
+        if "conf.ibs.ru" in stripped and re.search(r"\d+/\d+$", stripped):
+            continue
+        if stripped in ("", "", "", ""):
+            continue
+        # Удаляем строки-номера страниц (только цифры)
+        if re.match(r"^\d{1,4}$", stripped):
+            continue
+        cleaned_lines.append(line)
+
+    text = "\n".join(cleaned_lines)
+
+    # Склеиваем разорванные camelCase термины и многословные технические термины
+    # Пример: "Back\nPressure" -> "Back Pressure", "Concurrent\nTasks" -> "Concurrent Tasks"
+    text = re.sub(r"([A-ZА-ЯЁ][a-zа-яё]+)\n([A-ZА-ЯЁ][a-zа-яё]+)", r"\1 \2", text)
+    text = re.sub(r"([a-zа-яё])\n([A-ZА-ЯЁ])", r"\1 \2", text)
+    # Склеиваем FlowFile Attributes, Input Port и т.д.
+    text = re.sub(r"(FlowFile|Flow|Input|Output|Process)\n(File|Attributes|Port|Group)", r"\1 \2", text)
+    # Склеиваем Controller Service, Back Pressure
+    text = re.sub(r"(Controller|Content|NiFi|Back|Concurrent)\n(Service|Tasks|Registry|Pressure)", r"\1 \2", text)
+
+    return text
+# ==============================================================================
 # 2. АЛГОРИТМ ОЧИСТКИ И ВОССТАНОВЛЕНИЯ СВЯЗНОСТИ
 # ==============================================================================
 def clean_garbage_artifacts(text: str) -> str:
@@ -130,7 +167,8 @@ def normalize_kb_file(file_path: Path) -> bool:
         if not content.strip():
             return False
 
-        step1 = clean_garbage_artifacts(content)
+        step0 = clean_confluence_artifacts(content)
+        step1 = clean_garbage_artifacts(step0)
         step2 = repair_line_breaks(step1)
         cleaned_text = reconstruct_paragraphs(step2)
 
